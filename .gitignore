@@ -65,6 +65,9 @@ yarn-error.log
 # testing
 /coverage
 
+# Secrets
+config.local.ts
+
 # Yarn
 .yarn/*
 !.yarn/patches
