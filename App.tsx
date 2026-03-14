@@ -1,7 +1,8 @@
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {
   Alert,
   Linking,
+  Platform,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -10,7 +11,8 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
-import {API_URL, API_TOKEN} from './config.local';
+import {API_URL, AUDIO_URL, API_TOKEN} from './config.local';
+import {AudioRecorderButton} from './src/components/AudioRecorderButton';
 
 interface ActionButton {
   id: string;
@@ -73,6 +75,31 @@ function App(): React.JSX.Element {
     Linking.openURL('tg://resolve?domain=LearnerLang_bot');
   };
 
+  const sendAudio = useCallback(async (filePath: string) => {
+    const formData = new FormData();
+    formData.append('audio', {
+      uri: Platform.OS === 'android' ? `file://${filePath}` : filePath,
+      type: 'audio/m4a',
+      name: 'recording.m4a',
+    } as any);
+
+    const res = await fetch(AUDIO_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${API_TOKEN}`,
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      Alert.alert('Ошибка', `Не удалось отправить: ${err}`);
+      throw new Error(err);
+    }
+
+    Alert.alert('Готово', 'Аудио успешно отправлено!');
+  }, []);
+
   return (
     <SafeAreaView
       style={[
@@ -96,6 +123,10 @@ function App(): React.JSX.Element {
           />
         ))}
       </View>
+
+      <View style={styles.spacer} />
+
+      <AudioRecorderButton onSend={sendAudio} isDarkMode={isDarkMode} />
     </SafeAreaView>
   );
 }
@@ -117,6 +148,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 16,
     justifyContent: 'center',
+  },
+  spacer: {
+    flex: 1,
   },
   button: {
     width: '46%',
